@@ -3,9 +3,7 @@ import 'package:flutter/services.dart';
 import '../services/stock.services.dart';
 import '../models/stock_item.dart';
 import '../models/bolis.dart';
-import '../models/materiales.dart';
 import '../components/stock_expansion_tile.dart';
-import '../components/detail_row.dart';
 import '../components/filter_chip.dart';
 
 class StockPage extends StatefulWidget {

@@ -4,7 +4,6 @@ import '../models/prestamo.dart';
 import '../models/pago.dart';
 import '../models/dinero.dart';
 import '../components/dinero_expansion_tile.dart';
-import '../components/detail_row.dart';
 import '../components/filter_chip.dart';
 import '../components/completion_chip.dart';
 

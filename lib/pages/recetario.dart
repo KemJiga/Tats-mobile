@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import '../services/receta.service.dart';
 import '../models/receta.dart';
 import '../components/receta_expansion_tile.dart';
-import '../components/detail_row.dart';
-import '../components/filter_chip.dart';
 
 class RecetarioPage extends StatefulWidget {
   const RecetarioPage({super.key});
