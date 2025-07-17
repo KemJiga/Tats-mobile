@@ -27,4 +27,34 @@ class StockService {
       throw Exception('Failed to load stock items');
     }
   }
+
+  // update bolis stock
+  static Future<void> updateBolis(
+      {required String id, required int cantidad}) async {
+    final response = await http.put(
+      Uri.parse('$_baseUrl/bolis'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({'id': id, 'cantidad': cantidad}),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Failed to update bolis');
+    }
+  }
+
+  // update materiales stock
+  static Future<void> updateMateriales(
+      {required String id, required int cantidad, required int precio}) async {
+    final response = await http.put(
+      Uri.parse('$_baseUrl/materiales'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({
+        'id': id,
+        'cantidad': cantidad,
+        'precio': precio,
+      }),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Failed to update materiales');
+    }
+  }
 }
