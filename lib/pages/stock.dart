@@ -4,6 +4,9 @@ import '../services/stock.services.dart';
 import '../models/stock_item.dart';
 import '../models/bolis.dart';
 import '../models/materiales.dart';
+import '../components/stock_expansion_tile.dart';
+import '../components/detail_row.dart';
+import '../components/filter_chip.dart';
 
 class StockPage extends StatefulWidget {
   const StockPage({super.key});
@@ -82,98 +85,6 @@ class _StockPageState extends State<StockPage> {
     });
   }
 
-  Widget _buildExpansionTile(StockItem item) {
-    return ExpansionTile(
-      leading: Icon(
-        item.type == 'bolis' ? Icons.icecream : Icons.inventory,
-        color: item.type == 'bolis' ? Colors.purple : Colors.orange,
-      ),
-      title: Text(
-        item.name,
-        style: const TextStyle(
-          fontWeight: FontWeight.bold,
-          fontSize: 16,
-        ),
-      ),
-      subtitle: Text(
-        '${item.type.toUpperCase()} - Cantidad: ${item.cantidad}',
-        style: TextStyle(
-          color: Colors.grey[600],
-          fontSize: 14,
-        ),
-      ),
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (item is BolisItem) ...[
-                _buildDetailRow('Sabor', item.sabor),
-                _buildDetailRow('Cantidad', '${item.cantidad}'),
-                _buildDetailRow(
-                    'Ganancia por Unidad', '\$${item.gananciaPorUnidad}'),
-              ] else if (item is MaterialesItem) ...[
-                _buildDetailRow('Nombre', item.nombre),
-                _buildDetailRow('Cantidad', '${item.cantidad}'),
-                _buildDetailRow('Unidad', item.unidad),
-                _buildDetailRow('Presentación', '${item.presentacion}'),
-                _buildDetailRow('Precio', '\$${item.precio}'),
-              ],
-              const SizedBox(height: 8),
-              Container(
-                width: double.infinity,
-                padding:
-                    const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  'ID: ${item.id}',
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 12,
-                    fontFamily: 'monospace',
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDetailRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 120,
-            child: Text(
-              '$label:',
-              style: const TextStyle(
-                fontWeight: FontWeight.w500,
-                color: Colors.grey,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -212,15 +123,42 @@ class _StockPageState extends State<StockPage> {
                 Row(
                   children: [
                     Expanded(
-                      child: _buildFilterChip('Todos', 'all'),
+                      child: CustomFilterChip(
+                        label: 'Todos',
+                        isSelected: _selectedFilter == 'all',
+                        onTap: () => _onFilterChanged('all'),
+                        selectedColor: Colors.blue,
+                        unselectedColor: Colors.grey[100]!,
+                        selectedTextColor: Colors.white,
+                        unselectedTextColor: Colors.blue,
+                        elevation: 1,
+                      ),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: _buildFilterChip('Bolis', 'bolis'),
+                      child: CustomFilterChip(
+                        label: 'Bolis',
+                        isSelected: _selectedFilter == 'bolis',
+                        onTap: () => _onFilterChanged('bolis'),
+                        selectedColor: Colors.blue,
+                        unselectedColor: Colors.grey[100]!,
+                        selectedTextColor: Colors.white,
+                        unselectedTextColor: Colors.blue,
+                        elevation: 1,
+                      ),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: _buildFilterChip('Materiales', 'materiales'),
+                      child: CustomFilterChip(
+                        label: 'Materiales',
+                        isSelected: _selectedFilter == 'materiales',
+                        onTap: () => _onFilterChanged('materiales'),
+                        selectedColor: Colors.blue,
+                        unselectedColor: Colors.grey[100]!,
+                        selectedTextColor: Colors.white,
+                        unselectedTextColor: Colors.blue,
+                        elevation: 1,
+                      ),
                     ),
                   ],
                 ),
@@ -288,33 +226,15 @@ class _StockPageState extends State<StockPage> {
                               horizontal: 16.0,
                               vertical: 4.0,
                             ),
-                            child:
-                                _buildExpansionTile(_filteredStockItems[index]),
+                            child: StockExpansionTile(
+                                item: _filteredStockItems[index],
+                                onUpdated: _loadStockItems),
                           );
                         },
                       ),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildFilterChip(String label, String value) {
-    final isSelected = _selectedFilter == value;
-    return FilterChip(
-      label: Text(
-        label,
-        style: TextStyle(
-          color: isSelected ? Colors.white : Colors.blue,
-          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-        ),
-      ),
-      selected: isSelected,
-      onSelected: (_) => _onFilterChanged(value),
-      backgroundColor: Colors.grey[100],
-      selectedColor: Colors.blue,
-      checkmarkColor: Colors.white,
-      elevation: isSelected ? 4 : 1,
     );
   }
 }

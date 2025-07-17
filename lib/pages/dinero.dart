@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import '../services/dinero.service.dart';
-import '../models/dinero_item.dart';
+import '../models/prestamo.dart';
+import '../models/pago.dart';
+import '../models/dinero.dart';
+import '../components/dinero_expansion_tile.dart';
+import '../components/detail_row.dart';
+import '../components/filter_chip.dart';
+import '../components/completion_chip.dart';
 
 class DineroPage extends StatefulWidget {
   const DineroPage({super.key});
@@ -10,8 +16,9 @@ class DineroPage extends StatefulWidget {
 }
 
 class _DineroPageState extends State<DineroPage> {
-  List<DineroItem> _dineroItems = [];
-  List<DineroItem> _filteredDineroItems = [];
+  Dinero _dinero = Dinero(prestamos: [], pagos: []);
+  List<Prestamo> _prestamos = [];
+  List<Pago> _pagos = [];
   bool _isLoading = true;
   final TextEditingController _searchController = TextEditingController();
   String _selectedFilter = 'all'; // 'all', 'prestamo', 'pago'
@@ -22,7 +29,7 @@ class _DineroPageState extends State<DineroPage> {
   @override
   void initState() {
     super.initState();
-    _loadDineroItems();
+    _loadDinero();
   }
 
   @override
@@ -31,17 +38,17 @@ class _DineroPageState extends State<DineroPage> {
     super.dispose();
   }
 
-  Future<void> _loadDineroItems() async {
+  Future<void> _loadDinero() async {
     setState(() {
       _isLoading = true;
     });
 
     try {
-      final items = await DineroService.getDineroItems();
-
+      final dinero = await DineroService.getDinero();
       setState(() {
-        _dineroItems = items;
-        _filteredDineroItems = items;
+        _dinero = dinero;
+        _prestamos = dinero.prestamos;
+        _pagos = dinero.pagos;
         _isLoading = false;
       });
     } catch (e) {
@@ -57,68 +64,53 @@ class _DineroPageState extends State<DineroPage> {
   }
 
   void _performSearch() {
-    final searchQuery = _searchController.text.trim();
-
-    if (searchQuery.isEmpty &&
-        _selectedFilter == 'all' &&
-        _completionFilter == null &&
-        _startDate == null &&
-        _endDate == null) {
-      setState(() {
-        _filteredDineroItems = _dineroItems;
-      });
-      return;
-    }
-
-    List<DineroItem> filteredItems = _dineroItems;
+    final searchQuery = _searchController.text.trim().toLowerCase();
+    List<Prestamo> prestamos = _dinero.prestamos;
+    List<Pago> pagos = _dinero.pagos;
 
     // Filter by type
-    if (_selectedFilter != 'all') {
-      filteredItems =
-          filteredItems.where((item) => item.type == _selectedFilter).toList();
+    if (_selectedFilter == 'prestamo') {
+      pagos = [];
+    } else if (_selectedFilter == 'pago') {
+      prestamos = [];
     }
 
-    // Filter by name or associated prestamo name for pagos
+    // Filter by name
     if (searchQuery.isNotEmpty) {
-      final lowerQuery = searchQuery.toLowerCase();
-      filteredItems = filteredItems.where((item) {
-        if (item.nombre.toLowerCase().contains(lowerQuery)) {
-          return true;
-        }
-        if (item is PagoItem) {
-          return item.pago.prestamo.nombre.toLowerCase().contains(lowerQuery);
-        }
-        return false;
-      }).toList();
+      prestamos = prestamos
+          .where((p) => p.nombre.toLowerCase().contains(searchQuery))
+          .toList();
+      pagos = pagos
+          .where((p) =>
+              p.nombre.toLowerCase().contains(searchQuery) ||
+              p.prestamo.nombre.toLowerCase().contains(searchQuery))
+          .toList();
     }
 
-    // Filter by completion status
+    // Filter by completion status (only applies to prestamos)
     if (_completionFilter != null) {
-      filteredItems = filteredItems.where((item) {
-        if (item is PrestamoItem) {
-          final isCompleted =
-              DineroService.isPrestamoCompleted(item.prestamo.id);
-          return isCompleted == _completionFilter;
-        }
-        return false;
-      }).toList();
+      prestamos = prestamos
+          .where((p) => _isPrestamoCompleted(p) == _completionFilter)
+          .toList();
     }
 
     // Filter by date range
     if (_startDate != null || _endDate != null) {
-      filteredItems = filteredItems.where((item) {
-        if (_startDate != null && item.fecha.isBefore(_startDate!)) {
-          return false;
-        }
-        if (_endDate != null && item.fecha.isAfter(_endDate!)) {
-          return false;
-        }
-        return true;
-      }).toList();
+      if (_startDate != null) {
+        prestamos =
+            prestamos.where((p) => !p.fecha.isBefore(_startDate!)).toList();
+        pagos = pagos.where((p) => !p.fecha.isBefore(_startDate!)).toList();
+      }
+      if (_endDate != null) {
+        prestamos =
+            prestamos.where((p) => !p.fecha.isAfter(_endDate!)).toList();
+        pagos = pagos.where((p) => !p.fecha.isAfter(_endDate!)).toList();
+      }
     }
 
     setState(() {
-      _filteredDineroItems = filteredItems;
+      _prestamos = prestamos;
+      _pagos = pagos;
     });
   }
 
@@ -172,17 +164,16 @@ class _DineroPageState extends State<DineroPage> {
       _completionFilter = null;
       _startDate = null;
       _endDate = null;
-      _filteredDineroItems = _dineroItems;
+      _prestamos = _dinero.prestamos;
+      _pagos = _dinero.pagos;
     });
   }
 
   String _getFilterSummary() {
     List<String> parts = [];
-
     if (_searchController.text.isNotEmpty) {
       parts.add('Nombre: "${_searchController.text}"');
     }
-    // Removed prestamo name filter summary
     if (_selectedFilter != 'all') {
       parts.add(
           'Tipo: ${_selectedFilter == 'prestamo' ? 'Préstamos' : 'Pagos'}');
@@ -193,110 +184,47 @@ class _DineroPageState extends State<DineroPage> {
     if (_startDate != null || _endDate != null) {
       parts.add('Rango de fechas');
     }
-
     return parts.isEmpty ? 'Sin filtros aplicados' : parts.join(' • ');
   }
 
-  Widget _buildDineroExpansionTile(DineroItem item) {
-    return ExpansionTile(
-      leading: Icon(
-        item.type == 'prestamo' ? Icons.account_balance : Icons.payment,
-        color: item.type == 'prestamo' ? Colors.blue : Colors.green,
-      ),
-      title: Text(
-        item.nombre,
-        style: const TextStyle(
-          fontWeight: FontWeight.bold,
-          fontSize: 16,
-        ),
-      ),
-      subtitle: Text(
-        '${item.type == 'prestamo' ? 'Préstamo' : 'Pago'} • \$${item.monto.toStringAsFixed(0)} • ${_formatDate(item.fecha)}',
-        style: TextStyle(
-          color: Colors.grey[600],
-          fontSize: 14,
-        ),
-      ),
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (item is PrestamoItem) ...[
-                _buildDetailRow('Nombre', item.prestamo.nombre),
-                _buildDetailRow('Fecha', _formatDate(item.prestamo.fecha)),
-                _buildDetailRow(
-                    'Monto', '\$${item.prestamo.monto.toStringAsFixed(0)}'),
-                _buildDetailRow('Tasa',
-                    '${(item.prestamo.tasa * 100).toStringAsFixed(1)}%'),
-                _buildDetailRow(
-                    'Estado',
-                    DineroService.isPrestamoCompleted(item.prestamo.id)
-                        ? 'Completado'
-                        : 'Pendiente'),
-              ] else if (item is PagoItem) ...[
-                _buildDetailRow('Nombre', item.pago.nombre),
-                _buildDetailRow('Préstamo', item.pago.prestamo.nombre),
-                _buildDetailRow('Fecha', _formatDate(item.pago.fecha)),
-                _buildDetailRow(
-                    'Monto', '\$${item.pago.monto.toStringAsFixed(0)}'),
-                _buildDetailRow(
-                    'Restante', '\$${item.pago.restante.toStringAsFixed(0)}'),
-                _buildDetailRow('Tipo',
-                    item.pago.tipo == 'capital' ? 'Capital' : 'Interés'),
-              ],
-              const SizedBox(height: 12),
-              Container(
-                width: double.infinity,
-                padding:
-                    const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  'ID: ${item.id}',
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 12,
-                    fontFamily: 'monospace',
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
+  // Helper to combine and sort prestamos and pagos by date
+  List<Map<String, dynamic>> _getCombinedSortedList() {
+    final List<Map<String, dynamic>> combined = [
+      ..._prestamos.map((p) => {'type': 'prestamo', 'data': p}),
+      ..._pagos.map((p) => {'type': 'pago', 'data': p}),
+    ];
+    combined.sort((a, b) {
+      final dateA = a['type'] == 'prestamo'
+          ? (a['data'] as Prestamo).fecha
+          : (a['data'] as Pago).fecha;
+      final dateB = b['type'] == 'prestamo'
+          ? (b['data'] as Prestamo).fecha
+          : (b['data'] as Pago).fecha;
+      return dateB.compareTo(dateA); // newest first
+    });
+    return combined;
   }
 
-  Widget _buildDetailRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 100,
-            child: Text(
-              '$label:',
-              style: const TextStyle(
-                fontWeight: FontWeight.w500,
-                color: Colors.grey,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
+  // Helper to determine if a Prestamo is completed
+  bool _isPrestamoCompleted(Prestamo prestamo) {
+    // Get all pagos for this prestamo
+    final pagosPrestamo = _dinero.pagos
+        .where((p) => p.prestamoId == prestamo.id && p.tipo == 'capital')
+        .toList();
+    if (pagosPrestamo.isEmpty) return false;
+    // Option 1: Check if last pago has restante == 0
+    pagosPrestamo.sort((a, b) => a.fecha.compareTo(b.fecha));
+    if (pagosPrestamo.last.restante == 0) return true;
+    // Option 2: Check if sum of pagos >= monto
+    final totalPagado = pagosPrestamo.fold(0.0, (sum, p) => sum + p.monto);
+    return totalPagado >= prestamo.monto;
+  }
+
+  Widget _buildDineroExpansionTile(Map<String, dynamic> item) {
+    return DineroExpansionTile(
+      item: item,
+      isPrestamoCompleted: _isPrestamoCompleted,
+      formatDate: _formatDate,
     );
   }
 
@@ -306,6 +234,7 @@ class _DineroPageState extends State<DineroPage> {
 
   @override
   Widget build(BuildContext context) {
+    final combinedList = _getCombinedSortedList();
     return Scaffold(
       appBar: AppBar(
         title: const Text('Gestión de Dinero'),
@@ -376,9 +305,7 @@ class _DineroPageState extends State<DineroPage> {
                           ),
                         ],
                       ),
-
                       const SizedBox(height: 16),
-
                       // Name Search
                       TextField(
                         controller: _searchController,
@@ -402,11 +329,7 @@ class _DineroPageState extends State<DineroPage> {
                         ),
                         onChanged: (_) => _performSearch(),
                       ),
-
                       const SizedBox(height: 16),
-
-                      // Removed Prestamo Name Search
-
                       // Completion Status Filter
                       const Text(
                         'Estado del préstamo:',
@@ -431,9 +354,7 @@ class _DineroPageState extends State<DineroPage> {
                           ),
                         ],
                       ),
-
                       const SizedBox(height: 16),
-
                       // Date Range Filter
                       const Text(
                         'Rango de fechas:',
@@ -479,12 +400,11 @@ class _DineroPageState extends State<DineroPage> {
               ],
             ),
           ),
-
           // Results Section
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: Text(
-              'Elementos encontrados: ${_filteredDineroItems.length}',
+              'Elementos encontrados: ${combinedList.length}',
               textAlign: TextAlign.start,
               style: const TextStyle(
                 fontSize: 16,
@@ -505,7 +425,7 @@ class _DineroPageState extends State<DineroPage> {
                       ],
                     ),
                   )
-                : _filteredDineroItems.isEmpty
+                : combinedList.isEmpty
                     ? const Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -535,15 +455,15 @@ class _DineroPageState extends State<DineroPage> {
                         ),
                       )
                     : ListView.builder(
-                        itemCount: _filteredDineroItems.length,
+                        itemCount: combinedList.length,
                         itemBuilder: (context, index) {
                           return Card(
                             margin: const EdgeInsets.symmetric(
                               horizontal: 16.0,
                               vertical: 4.0,
                             ),
-                            child: _buildDineroExpansionTile(
-                                _filteredDineroItems[index]),
+                            child:
+                                _buildDineroExpansionTile(combinedList[index]),
                           );
                         },
                       ),
@@ -555,39 +475,29 @@ class _DineroPageState extends State<DineroPage> {
 
   Widget _buildFilterChip(String label, String value) {
     final isSelected = _selectedFilter == value;
-    return FilterChip(
-      label: Text(
-        label,
-        style: TextStyle(
-          color: isSelected ? Colors.white : Colors.green,
-          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-        ),
-      ),
-      selected: isSelected,
-      onSelected: (_) => _onFilterChanged(value),
-      backgroundColor: Colors.grey[100],
+    return CustomFilterChip(
+      label: label,
+      isSelected: isSelected,
+      onTap: () => _onFilterChanged(value),
       selectedColor: Colors.green,
-      checkmarkColor: Colors.white,
-      elevation: isSelected ? 4 : 1,
+      unselectedColor: Colors.grey[100]!,
+      selectedTextColor: Colors.white,
+      unselectedTextColor: Colors.green,
+      elevation: 1,
     );
   }
 
   Widget _buildCompletionChip(String label, bool? value) {
     final isSelected = _completionFilter == value;
-    return FilterChip(
-      label: Text(
-        label,
-        style: TextStyle(
-          color: isSelected ? Colors.white : Colors.green,
-          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-        ),
-      ),
-      selected: isSelected,
-      onSelected: (_) => _onCompletionFilterChanged(value),
-      backgroundColor: Colors.grey[100],
+    return CompletionChip(
+      label: label,
+      isSelected: isSelected,
+      onTap: () => _onCompletionFilterChanged(value),
       selectedColor: Colors.green,
-      checkmarkColor: Colors.white,
-      elevation: isSelected ? 4 : 1,
+      unselectedColor: Colors.grey[100]!,
+      selectedTextColor: Colors.white,
+      unselectedTextColor: Colors.green,
+      elevation: 1,
     );
   }
 }
