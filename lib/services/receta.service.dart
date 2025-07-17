@@ -14,8 +14,10 @@ class RecetaService {
       headers: {'Content-Type': 'application/json'},
     );
     if (response.statusCode == 200) {
-      final recetas = json.decode(response.body);
-      return recetas.map((receta) => Receta.fromJson(receta)).toList();
+      final recetas = (json.decode(response.body) as List)
+          .map((receta) => Receta.fromJson(receta))
+          .toList();
+      return recetas;
     } else {
       throw Exception('Failed to load recetas');
     }
