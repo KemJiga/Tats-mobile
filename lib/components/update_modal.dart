@@ -15,7 +15,7 @@ class UpdateStockItemModal extends StatefulWidget {
 class _UpdateStockItemModalState extends State<UpdateStockItemModal> {
   final _formKey = GlobalKey<FormState>();
   late int _cantidad;
-  int? _precio; // For Materiales
+  double? _precio; // For Materiales
 
   @override
   void initState() {
@@ -31,9 +31,9 @@ class _UpdateStockItemModalState extends State<UpdateStockItemModal> {
     _formKey.currentState!.save();
     try {
       if (widget.item is BolisItem) {
-        await StockService.updateBolis(id: widget.item.id, cantidad: _cantidad);
+        await StockService.updateBoli(id: widget.item.id, cantidad: _cantidad);
       } else if (widget.item is MaterialesItem) {
-        await StockService.updateMateriales(
+        await StockService.updateMaterial(
           id: widget.item.id,
           cantidad: _cantidad,
           precio: _precio!,
@@ -70,7 +70,7 @@ class _UpdateStockItemModalState extends State<UpdateStockItemModal> {
                 decoration: const InputDecoration(labelText: 'Precio'),
                 keyboardType: TextInputType.number,
                 validator: (v) => v == null || v.isEmpty ? 'Requerido' : null,
-                onSaved: (v) => _precio = int.parse(v!),
+                onSaved: (v) => _precio = double.parse(v!),
               ),
           ],
         ),
