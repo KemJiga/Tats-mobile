@@ -33,5 +33,48 @@ class DineroService {
     }
   }
 
-  // TODO: Implement post and put for prestamos and pagos
+  static Future<void> createPrestamo(
+      {required String nombre,
+      required double monto,
+      required double tasa,
+      required DateTime fecha}) async {
+    final response = await http.post(
+      Uri.parse('$_baseUrl/prestamos'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({
+        'nombre': nombre,
+        'monto': monto,
+        'tasa': tasa,
+        'fecha': fecha,
+      }),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Failed to create prestamo');
+    }
+  }
+
+  static Future<void> createPago({
+    required String prestamoId,
+    required String nombre,
+    required double monto,
+    required double restante,
+    required DateTime fecha,
+    required String tipo,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$_baseUrl/pagos'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({
+        'prestamoId': prestamoId,
+        'nombre': nombre,
+        'monto': monto,
+        'restante': restante,
+        'fecha': fecha,
+        'tipo': tipo,
+      }),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Failed to create pago');
+    }
+  }
 }

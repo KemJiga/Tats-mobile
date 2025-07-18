@@ -8,6 +8,24 @@ class RecetaService {
   static final String _baseUrl =
       dotenv.env['BACKEND_URL'] ?? 'http://10.0.2.2:3000/api';
 
+  static Future<void> createReceta(
+      {required String nombre,
+      required List<String> ingredientes,
+      required List<String> pasos}) async {
+    final response = await http.post(
+      Uri.parse('$_baseUrl/recetas'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({
+        'nombre': nombre,
+        'ingredientes': ingredientes,
+        'pasos': pasos,
+      }),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Failed to create receta');
+    }
+  }
+
   static Future<List<Receta>> getRecetas() async {
     final response = await http.get(
       Uri.parse('$_baseUrl/recetas'),

@@ -1,3 +1,5 @@
+import 'dart:ffi';
+
 import '../models/bolis.dart';
 import '../models/materiales.dart';
 import '../models/stock_item.dart';
@@ -28,8 +30,43 @@ class StockService {
     }
   }
 
+  static Future<void> createBoli(
+      {required String sabor,
+      required int cantidad,
+      required int gananciaPorUnidad}) async {
+    final response = await http.post(
+      Uri.parse('$_baseUrl/bolis'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({
+        'sabor': sabor,
+        'cantidad': cantidad,
+        'gananciaPorUnidad': gananciaPorUnidad,
+      }),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Failed to create bolis');
+    }
+  }
+
+  static Future<void> createMaterial(
+      {required String nombre,
+      required int cantidad,
+      required String unidad,
+      required double presentacion,
+      required double precio}) async {
+    final response = await http.post(
+      Uri.parse('$_baseUrl/materiales'),
+      headers: {'Content-Type': 'application/json'},
+      body: json
+          .encode({'nombre': nombre, 'cantidad': cantidad, 'precio': precio}),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Failed to create material');
+    }
+  }
+
   // update bolis stock
-  static Future<void> updateBolis(
+  static Future<void> updateBoli(
       {required String id, required int cantidad}) async {
     final response = await http.put(
       Uri.parse('$_baseUrl/bolis'),
@@ -42,8 +79,10 @@ class StockService {
   }
 
   // update materiales stock
-  static Future<void> updateMateriales(
-      {required String id, required int cantidad, required int precio}) async {
+  static Future<void> updateMaterial(
+      {required String id,
+      required int cantidad,
+      required double precio}) async {
     final response = await http.put(
       Uri.parse('$_baseUrl/materiales'),
       headers: {'Content-Type': 'application/json'},
