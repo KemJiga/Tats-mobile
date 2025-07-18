@@ -30,13 +30,23 @@ class _StockPageState extends State<StockPage> {
     setState(() {
       _isLoading = true;
     });
-    final items = await StockService.getStockItems();
-
-    setState(() {
-      _stockItems = items;
-      _filteredStockItems = items;
-      _isLoading = false;
-    });
+    try {
+      final items = await StockService.getStockItems();
+      setState(() {
+        _stockItems = items;
+        _filteredStockItems = items;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error cargando datos: $e')),
+        );
+      }
+    }
   }
 
   void _onFilterChanged(String? newFilter) {

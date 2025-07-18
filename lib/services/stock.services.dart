@@ -24,7 +24,7 @@ class StockService {
         ...materiales.map((materiales) => MaterialesItem.fromJson(materiales)),
       ];
     } else {
-      throw Exception('Failed to load stock items');
+      throw Exception('Error en el servidor');
     }
   }
 
@@ -42,7 +42,7 @@ class StockService {
       }),
     );
     if (response.statusCode != 200) {
-      throw Exception('Failed to create bolis');
+      throw Exception('Error en el servidor');
     }
   }
 
@@ -59,7 +59,7 @@ class StockService {
           .encode({'nombre': nombre, 'cantidad': cantidad, 'precio': precio}),
     );
     if (response.statusCode != 200) {
-      throw Exception('Failed to create material');
+      throw Exception('Error en el servidor');
     }
   }
 
@@ -72,7 +72,7 @@ class StockService {
       body: json.encode({'id': id, 'cantidad': cantidad}),
     );
     if (response.statusCode != 200) {
-      throw Exception('Failed to update bolis');
+      throw Exception('Error en el servidor');
     }
   }
 
@@ -91,7 +91,7 @@ class StockService {
       }),
     );
     if (response.statusCode != 200) {
-      throw Exception('Failed to update materiales');
+      throw Exception('Error en el servidor');
     }
   }
 }

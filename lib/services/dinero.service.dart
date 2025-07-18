@@ -29,7 +29,7 @@ class DineroService {
 
       return Dinero(prestamos: prestamos, pagos: pagos);
     } else {
-      throw Exception('Failed to load dinero');
+      throw Exception('Error en el servidor');
     }
   }
 
@@ -49,7 +49,7 @@ class DineroService {
       }),
     );
     if (response.statusCode != 200) {
-      throw Exception('Failed to create prestamo');
+      throw Exception('Error en el servidor');
     }
   }
 
@@ -74,7 +74,7 @@ class DineroService {
       }),
     );
     if (response.statusCode != 200) {
-      throw Exception('Failed to create pago');
+      throw Exception('Error en el servidor');
     }
   }
 }

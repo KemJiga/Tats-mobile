@@ -22,7 +22,7 @@ class RecetaService {
       }),
     );
     if (response.statusCode != 200) {
-      throw Exception('Failed to create receta');
+      throw Exception('Error en el servidor');
     }
   }
 
@@ -37,7 +37,7 @@ class RecetaService {
           .toList();
       return recetas;
     } else {
-      throw Exception('Failed to load recetas');
+      throw Exception('Error en el servidor');
     }
   }
 }
