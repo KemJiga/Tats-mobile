@@ -2,7 +2,7 @@ import 'stock_item.dart';
 
 class BolisItem extends StockItem {
   final String sabor;
-  final int gananciaPorUnidad;
+  final double gananciaPorUnidad;
 
   BolisItem({
     required super.id,
@@ -18,8 +18,8 @@ class BolisItem extends StockItem {
     return BolisItem(
       id: json['id'],
       sabor: json['sabor'],
-      cantidad: json['cantidad'],
-      gananciaPorUnidad: json['gananciaPorUnidad'],
+      cantidad: (json['cantidad'] as num).toInt(),
+      gananciaPorUnidad: (json['gananciaPorUnidad'] as num).toDouble(),
     );
   }
 
