@@ -6,6 +6,7 @@ import '../models/dinero.dart';
 import '../components/dinero_expansion_tile.dart';
 import '../components/filter_chip.dart';
 import '../components/completion_chip.dart';
+import '../components/add_modal.dart';
 
 class DineroPage extends StatefulWidget {
   const DineroPage({super.key});
@@ -252,221 +253,229 @@ class _DineroPageState extends State<DineroPage> {
             ),
         ],
       ),
-      body: Column(
+      body: Stack(
         children: [
-          // Filter Section
-          Card(
-            margin: const EdgeInsets.all(16.0),
-            child: ExpansionTile(
-              leading: const Icon(Icons.filter_list, color: Colors.green),
-              title: const Text(
-                'Filtros de búsqueda',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-              subtitle: Text(
-                _getFilterSummary(),
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 12,
-                ),
-              ),
-              initiallyExpanded: false,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Type Filter
-                      const Text(
-                        'Filtrar por tipo:',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
+          Column(
+            children: [
+              // Filter Section
+              Card(
+                margin: const EdgeInsets.all(16.0),
+                child: ExpansionTile(
+                  leading: const Icon(Icons.filter_list, color: Colors.green),
+                  title: const Text(
+                    'Filtros de búsqueda',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                  subtitle: Text(
+                    _getFilterSummary(),
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 12,
+                    ),
+                  ),
+                  initiallyExpanded: false,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(
-                            child: _buildFilterChip('Todos', 'all'),
+                          // Type Filter
+                          const Text(
+                            'Filtrar por tipo:',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: _buildFilterChip('Préstamos', 'prestamo'),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _buildFilterChip('Todos', 'all'),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child:
+                                    _buildFilterChip('Préstamos', 'prestamo'),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: _buildFilterChip('Pagos', 'pago'),
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: _buildFilterChip('Pagos', 'pago'),
+                          const SizedBox(height: 16),
+                          // Name Search
+                          TextField(
+                            controller: _searchController,
+                            decoration: InputDecoration(
+                              hintText: 'Buscar por nombre...',
+                              prefixIcon: const Icon(Icons.search),
+                              suffixIcon: _searchController.text.isNotEmpty
+                                  ? IconButton(
+                                      icon: const Icon(Icons.clear),
+                                      onPressed: () {
+                                        _searchController.clear();
+                                        _performSearch();
+                                      },
+                                    )
+                                  : null,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              filled: true,
+                              fillColor: Colors.grey[50],
+                            ),
+                            onChanged: (_) => _performSearch(),
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      // Name Search
-                      TextField(
-                        controller: _searchController,
-                        decoration: InputDecoration(
-                          hintText: 'Buscar por nombre...',
-                          prefixIcon: const Icon(Icons.search),
-                          suffixIcon: _searchController.text.isNotEmpty
-                              ? IconButton(
+                          const SizedBox(height: 16),
+                          // Completion Status Filter
+                          const Text(
+                            'Estado del préstamo:',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _buildCompletionChip('Todos', null),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child:
+                                    _buildCompletionChip('Completados', true),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child:
+                                    _buildCompletionChip('Pendientes', false),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          // Date Range Filter
+                          const Text(
+                            'Rango de fechas:',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: ElevatedButton.icon(
+                                  onPressed: _selectDateRange,
+                                  icon: const Icon(Icons.date_range, size: 18),
+                                  label: Text(
+                                    _startDate != null && _endDate != null
+                                        ? '${_formatDate(_startDate!)} - ${_formatDate(_endDate!)}'
+                                        : 'Seleccionar fechas',
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.green[100],
+                                    foregroundColor: Colors.green[800],
+                                    elevation: 2,
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 12),
+                                  ),
+                                ),
+                              ),
+                              if (_startDate != null || _endDate != null) ...[
+                                const SizedBox(width: 8),
+                                IconButton(
+                                  onPressed: _clearDateRange,
                                   icon: const Icon(Icons.clear),
-                                  onPressed: () {
-                                    _searchController.clear();
-                                    _performSearch();
-                                  },
-                                )
-                              : null,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          filled: true,
-                          fillColor: Colors.grey[50],
-                        ),
-                        onChanged: (_) => _performSearch(),
-                      ),
-                      const SizedBox(height: 16),
-                      // Completion Status Filter
-                      const Text(
-                        'Estado del préstamo:',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildCompletionChip('Todos', null),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: _buildCompletionChip('Completados', true),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: _buildCompletionChip('Pendientes', false),
+                                  tooltip: 'Limpiar fechas',
+                                ),
+                              ],
+                            ],
                           ),
                         ],
                       ),
-                      const SizedBox(height: 16),
-                      // Date Range Filter
-                      const Text(
-                        'Rango de fechas:',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: ElevatedButton.icon(
-                              onPressed: _selectDateRange,
-                              icon: const Icon(Icons.date_range, size: 18),
-                              label: Text(
-                                _startDate != null && _endDate != null
-                                    ? '${_formatDate(_startDate!)} - ${_formatDate(_endDate!)}'
-                                    : 'Seleccionar fechas',
-                              ),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.green[100],
-                                foregroundColor: Colors.green[800],
-                                elevation: 2,
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 12),
-                              ),
-                            ),
-                          ),
-                          if (_startDate != null || _endDate != null) ...[
-                            const SizedBox(width: 8),
-                            IconButton(
-                              onPressed: _clearDateRange,
-                              icon: const Icon(Icons.clear),
-                              tooltip: 'Limpiar fechas',
-                            ),
-                          ],
-                        ],
-                      ),
-                    ],
+                    ),
+                  ],
+                ),
+              ),
+              // Results Section
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Text(
+                  'Elementos encontrados: ${combinedList.length}',
+                  textAlign: TextAlign.start,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green,
                   ),
                 ),
-              ],
-            ),
-          ),
-          // Results Section
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: Text(
-              'Elementos encontrados: ${combinedList.length}',
-              textAlign: TextAlign.start,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.green,
               ),
-            ),
-          ),
-          Expanded(
-            child: _isLoading
-                ? const Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        CircularProgressIndicator(),
-                        SizedBox(height: 16),
-                        Text('Cargando datos...'),
-                      ],
-                    ),
-                  )
-                : combinedList.isEmpty
+              Expanded(
+                child: _isLoading
                     ? const Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(
-                              Icons.account_balance_outlined,
-                              size: 64,
-                              color: Colors.grey,
-                            ),
+                            CircularProgressIndicator(),
                             SizedBox(height: 16),
-                            Text(
-                              'No se encontraron elementos',
-                              style: TextStyle(
-                                fontSize: 18,
-                                color: Colors.grey,
-                              ),
-                            ),
-                            SizedBox(height: 8),
-                            Text(
-                              'Intenta con otros filtros',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey,
-                              ),
-                            ),
+                            Text('Cargando datos...'),
                           ],
                         ),
                       )
-                    : ListView.builder(
-                        itemCount: combinedList.length,
-                        itemBuilder: (context, index) {
-                          return Card(
-                            margin: const EdgeInsets.symmetric(
-                              horizontal: 16.0,
-                              vertical: 4.0,
+                    : combinedList.isEmpty
+                        ? const Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.account_balance_outlined,
+                                  size: 64,
+                                  color: Colors.grey,
+                                ),
+                                SizedBox(height: 16),
+                                Text(
+                                  'No se encontraron elementos',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                                SizedBox(height: 8),
+                                Text(
+                                  'Intenta con otros filtros',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              ],
                             ),
-                            child:
-                                _buildDineroExpansionTile(combinedList[index]),
-                          );
-                        },
-                      ),
+                          )
+                        : ListView.builder(
+                            itemCount: combinedList.length,
+                            itemBuilder: (context, index) {
+                              return Card(
+                                margin: const EdgeInsets.symmetric(
+                                  horizontal: 16.0,
+                                  vertical: 4.0,
+                                ),
+                                child: _buildDineroExpansionTile(
+                                    combinedList[index]),
+                              );
+                            },
+                          ),
+              ),
+            ],
           ),
+          AddModalFAB(type: AddModalType.dinero),
         ],
       ),
     );

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/receta.service.dart';
 import '../models/receta.dart';
 import '../components/receta_expansion_tile.dart';
+import '../components/add_modal.dart';
 
 class RecetarioPage extends StatefulWidget {
   const RecetarioPage({super.key});
@@ -161,177 +162,182 @@ class _RecetarioPageState extends State<RecetarioPage> {
             ),
         ],
       ),
-      body: Column(
+      body: Stack(
         children: [
-          // Search Section
-          Card(
-            margin: const EdgeInsets.all(16.0),
-            child: ExpansionTile(
-              leading: const Icon(Icons.filter_list, color: Colors.orange),
-              title: const Text(
-                'Filtros de búsqueda',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-              subtitle: Text(
-                _getFilterSummary(),
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 12,
-                ),
-              ),
-              initiallyExpanded: false,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Name Search
-                      TextField(
-                        controller: _searchController,
-                        decoration: InputDecoration(
-                          hintText: 'Buscar por nombre de receta...',
-                          prefixIcon: const Icon(Icons.search),
-                          suffixIcon: _searchController.text.isNotEmpty
-                              ? IconButton(
-                                  icon: const Icon(Icons.clear),
-                                  onPressed: () {
-                                    _searchController.clear();
-                                    _performSearch();
-                                  },
-                                )
-                              : null,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          filled: true,
-                          fillColor: Colors.grey[50],
-                        ),
-                        onChanged: (_) => _performSearch(),
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // Ingredients Filter
-                      const Text(
-                        'Filtrar por ingredientes:',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 4,
-                        children: _availableIngredientes.map((ingrediente) {
-                          final isSelected =
-                              _selectedIngredientes.contains(ingrediente);
-                          return FilterChip(
-                            label: Text(ingrediente),
-                            selected: isSelected,
-                            onSelected: (_) =>
-                                _onIngredienteToggled(ingrediente),
-                            backgroundColor: Colors.grey[100],
-                            selectedColor: Colors.orange[200],
-                            checkmarkColor: Colors.orange[800],
-                          );
-                        }).toList(),
-                      ),
-
-                      if (_selectedIngredientes.isNotEmpty) ...[
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            const Icon(Icons.info_outline,
-                                size: 16, color: Colors.blue),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'Mostrando recetas que contienen TODOS los ingredientes seleccionados',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.blue[700],
-                                  fontStyle: FontStyle.italic,
-                                ),
+          Column(
+            children: [
+              // Search Section
+              Card(
+                margin: const EdgeInsets.all(16.0),
+                child: ExpansionTile(
+                  leading: const Icon(Icons.filter_list, color: Colors.orange),
+                  title: const Text(
+                    'Filtros de búsqueda',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                  subtitle: Text(
+                    _getFilterSummary(),
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 12,
+                    ),
+                  ),
+                  initiallyExpanded: false,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Name Search
+                          TextField(
+                            controller: _searchController,
+                            decoration: InputDecoration(
+                              hintText: 'Buscar por nombre de receta...',
+                              prefixIcon: const Icon(Icons.search),
+                              suffixIcon: _searchController.text.isNotEmpty
+                                  ? IconButton(
+                                      icon: const Icon(Icons.clear),
+                                      onPressed: () {
+                                        _searchController.clear();
+                                        _performSearch();
+                                      },
+                                    )
+                                  : null,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
                               ),
+                              filled: true,
+                              fillColor: Colors.grey[50],
+                            ),
+                            onChanged: (_) => _performSearch(),
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          // Ingredients Filter
+                          const Text(
+                            'Filtrar por ingredientes:',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 4,
+                            children: _availableIngredientes.map((ingrediente) {
+                              final isSelected =
+                                  _selectedIngredientes.contains(ingrediente);
+                              return FilterChip(
+                                label: Text(ingrediente),
+                                selected: isSelected,
+                                onSelected: (_) =>
+                                    _onIngredienteToggled(ingrediente),
+                                backgroundColor: Colors.grey[100],
+                                selectedColor: Colors.orange[200],
+                                checkmarkColor: Colors.orange[800],
+                              );
+                            }).toList(),
+                          ),
+
+                          if (_selectedIngredientes.isNotEmpty) ...[
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                const Icon(Icons.info_outline,
+                                    size: 16, color: Colors.blue),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Mostrando recetas que contienen TODOS los ingredientes seleccionados',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.blue[700],
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Results Section
-          Text('Recetas encontradas: ${_filteredRecetas.length}',
-              textAlign: TextAlign.start,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.orange,
-              )),
-          Expanded(
-            child: _isLoading
-                ? const Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        CircularProgressIndicator(),
-                        SizedBox(height: 16),
-                        Text('Cargando recetas...'),
-                      ],
+                        ],
+                      ),
                     ),
-                  )
-                : _filteredRecetas.isEmpty
+                  ],
+                ),
+              ),
+
+              // Results Section
+              Text('Recetas encontradas: ${_filteredRecetas.length}',
+                  textAlign: TextAlign.start,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.orange,
+                  )),
+              Expanded(
+                child: _isLoading
                     ? const Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(
-                              Icons.restaurant_menu_outlined,
-                              size: 64,
-                              color: Colors.grey,
-                            ),
+                            CircularProgressIndicator(),
                             SizedBox(height: 16),
-                            Text(
-                              'No se encontraron recetas',
-                              style: TextStyle(
-                                fontSize: 18,
-                                color: Colors.grey,
-                              ),
-                            ),
-                            SizedBox(height: 8),
-                            Text(
-                              'Intenta con otros filtros',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey,
-                              ),
-                            ),
+                            Text('Cargando recetas...'),
                           ],
                         ),
                       )
-                    : ListView.builder(
-                        itemCount: _filteredRecetas.length,
-                        itemBuilder: (context, index) {
-                          return Card(
-                            margin: const EdgeInsets.symmetric(
-                              horizontal: 16.0,
-                              vertical: 4.0,
+                    : _filteredRecetas.isEmpty
+                        ? const Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.restaurant_menu_outlined,
+                                  size: 64,
+                                  color: Colors.grey,
+                                ),
+                                SizedBox(height: 16),
+                                Text(
+                                  'No se encontraron recetas',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                                SizedBox(height: 8),
+                                Text(
+                                  'Intenta con otros filtros',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              ],
                             ),
-                            child: _buildRecetaExpansionTile(
-                                _filteredRecetas[index]),
-                          );
-                        },
-                      ),
+                          )
+                        : ListView.builder(
+                            itemCount: _filteredRecetas.length,
+                            itemBuilder: (context, index) {
+                              return Card(
+                                margin: const EdgeInsets.symmetric(
+                                  horizontal: 16.0,
+                                  vertical: 4.0,
+                                ),
+                                child: _buildRecetaExpansionTile(
+                                    _filteredRecetas[index]),
+                              );
+                            },
+                          ),
+              ),
+            ],
           ),
+          AddModalFAB(type: AddModalType.recetario),
         ],
       ),
     );
